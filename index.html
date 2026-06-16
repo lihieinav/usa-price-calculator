@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מחשבון תמחור - תכנון טיול ארה"ב</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f5f7fb; color: #1f2937; direction: rtl; }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 28px 16px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 18px; box-shadow: 0 10px 28px rgba(15,23,42,.08); padding: 22px; margin-bottom: 16px; }
+    h1 { font-size: 26px; margin: 0 0 8px; }
+    .subtitle { margin: 0 0 18px; color: #64748b; line-height: 1.5; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .single-row { grid-template-columns: 1fr; }
+    .fx-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+    .section-divider { margin: 20px 0 12px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 15px; font-weight: 800; color: #0f172a; }
+    .field { display: flex; flex-direction: column; gap: 7px; }
+    label { font-weight: 700; font-size: 14px; }
+    select, input { width: 100%; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 13px; font-size: 16px; background: #fff; color: #111827; }
+    input[readonly] { background: #f8fafc; }
+    button { border: 0; border-radius: 10px; padding: 10px 12px; background: #2563eb; color: #fff; font-weight: 700; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    .secondary-btn { background: #64748b; }
+    .hint { font-size: 12px; color: #64748b; line-height: 1.4; }
+    .results { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+    .one-result { grid-template-columns: 1fr; }
+    .result-box { border-radius: 16px; padding: 16px; border: 1px solid #e2e8f0; background: #f8fafc; }
+    .result-box.primary { background: #eef6ff; border-color: #bfdbfe; }
+    .result-title { font-size: 13px; color: #475569; margin-bottom: 7px; font-weight: 700; }
+    .result-value { font-size: 25px; font-weight: 800; color: #0f172a; white-space: nowrap; }
+    .breakdown { margin-top: 16px; border-top: 1px solid #e5e7eb; padding-top: 14px; font-size: 14px; line-height: 1.85; color: #334155; }
+    .breakdown strong { color: #0f172a; }
+    .note { background: #fff7ed; border: 1px solid #fed7aa; color: #7c2d12; border-radius: 14px; padding: 12px 14px; margin-top: 14px; line-height: 1.5; font-size: 13px; }
+    .toggle-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+    .toggle-row input { width: 18px; height: 18px; accent-color: #2563eb; }
+    .section-title { margin: 0 0 14px; font-size: 18px; }
+    .pill { display: inline-block; padding: 4px 9px; border-radius: 999px; background: #e0f2fe; color: #075985; font-weight: 700; font-size: 12px; margin-inline-start: 6px; }
+    .pill.warning { background: #fee2e2; color: #991b1b; }
+    @media (max-width: 760px) { .grid, .results, .fx-grid { grid-template-columns: 1fr; } .card { padding: 18px; } .result-value { font-size: 22px; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h2 class="section-title">חישוב ימים בין תאריכים</h2>
+      <p class="subtitle">חשב כמה ימים בדיוק בין שני תאריכים. מתאים לבדיקה מהירה בזמן שיחת מכירה.</p>
+      <div class="grid">
+        <div class="field"><label for="dateStart">תאריך התחלה</label><input type="date" id="dateStart" /></div>
+        <div class="field"><label for="dateEnd">תאריך סיום</label><input type="date" id="dateEnd" /></div>
+      </div>
+      <div style="display:flex; gap:12px; margin-top:18px; flex-wrap:wrap;"><button type="button" id="calculateDaysBtn">חשב ימים</button><button type="button" id="clearDaysBtn" class="secondary-btn">נקה</button></div>
+      <div class="results one-result" style="margin-top:20px;"><div class="result-box primary"><div class="result-title">מספר הימים בין התאריכים</div><div class="result-value" id="daysResult">—</div></div></div>
+    </section>
+
+    <section class="card">
+      <h1>מחשבון תמחור לשיחת מכירה</h1>
+      <p class="subtitle">כולל מחירון ארה"ב קיים + מחירון יומי חדש, שירותי הוואי/אלסקה, מקסיקו, קרוואנים, שערי מט"ח, הנחות ותוספות דחיפות.</p>
+
+      <div class="section-divider">תכנון ארצות הברית</div>
+      <div class="grid">
+        <div class="field">
+          <label for="usaPricingType">סוג מחירון ארה"ב</label>
+          <select id="usaPricingType">
+            <option value="legacy">מחירון קודם לפי חבילה</option>
+            <option value="daily">מחירון יומי חדש לפי מספר ימי טיול</option>
+          </select>
+          <div class="hint">בחרי האם לתמחר לפי המחירון הקודם או לפי המחירון היומי החדש.</div>
+        </div>
+
+        <div class="field" id="legacyUsaWrap">
+          <label for="usaDuration">משך הטיול לפי המחירון הקודם</label>
+          <select id="usaDuration">
+            <option value="none">ללא תכנון ארה"ב</option>
+            <optgroup label="תכנון מלא">
+              <option value="week">שבוע</option>
+              <option value="shortPackage">9-12 לילות</option>
+              <option value="twoWeeks">עד שבועיים</option>
+              <option value="threeWeeks">שלושה שבועות</option>
+              <option value="month">חודש</option>
+              <option value="monthWeek">חודש ושבוע</option>
+              <option value="monthHalf">חודש וחצי</option>
+              <option value="twoMonths">חודשיים</option>
+            </optgroup>
+            <optgroup label="חבילות בייסיק">
+              <option value="basicMonth">בייסיק עד חודש</option>
+              <option value="basicTwoMonths">בייסיק עד חודשיים</option>
+              <option value="basicThreeMonths">בייסיק שלושה חודשים</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="field" id="dailyUsaWrap" style="display:none;">
+          <label for="usaTripDays">מספר ימי טיול בארה"ב</label>
+          <input id="usaTripDays" type="number" min="0" step="1" value="14" />
+          <div class="hint">7–14 ימים: 195 ₪ ליום | 15–21 ימים: 179 ₪ ליום | 22+ ימים: 149 ₪ ליום</div>
+        </div>
+      </div>
+
+      <div class="section-divider">שערי מט"ח</div>
+      <div class="grid fx-grid">
+        <div class="field"><label for="usdRate">שער דולר לחישוב</label><input id="usdRate" type="number" step="0.01" min="0" value="3.75" /><div class="hint">לשירותי הוואי, אלסקה וייעוץ קרוואנים.</div></div>
+        <div class="field"><label for="eurRate">שער יורו לחישוב</label><input id="eurRate" type="number" step="0.01" min="0" value="4.05" /><div class="hint">לשירות מקסיקו.</div></div>
+        <div class="field"><label>&nbsp;</label><button type="button" id="refreshRate">עדכון שערי דולר ויורו מבנק ישראל</button><div class="hint" id="rateStatus">אפשר לעדכן שערים אוטומטית או לשנות ידנית בכל רגע.</div></div>
+      </div>
+
+      <div class="section-divider">המרת מטבע מהירה</div>
+      <div class="grid">
+        <div class="field"><label for="usdConvertAmount">סכום בדולרים</label><input id="usdConvertAmount" type="number" step="1" min="0" value="0" /></div>
+        <div class="field"><label>שווי בשקלים לפי שער דולר</label><input id="usdToIlsResult" type="text" value="₪0" readonly /></div>
+      </div>
+
+      <div class="section-divider">שירותי תכנון נוספים</div>
+      <div class="grid">
+        <div class="field"><label for="hawaiiConsulting">ייעוץ הוואי</label><select id="hawaiiConsulting"><option value="none">ללא ייעוץ הוואי</option><option value="yes">ייעוץ הוואי בלבד — 350$</option></select><div class="hint">ייעוץ בלבד. תוכנית מלאה כבר כוללת את הייעוץ.</div></div>
+        <div class="field"><label for="hawaiiPlan">תוכנית מלאה להוואי</label><select id="hawaiiPlan"><option value="none">ללא תוכנית הוואי</option><option value="oneWeek">תוכנית עד שבוע — 550$</option><option value="twoWeeks">תוכנית עד שבועיים — 700$</option><option value="fourWeeks">תוכנית עד 4 שבועות — 950$</option><option value="custom">מעל 4 שבועות / מחיר ידני</option></select><div class="hint">תוכנית מלאה כוללת כבר את הייעוץ. תוספת 25% מחושבת אוטומטית.</div></div>
+        <div class="field"><label for="alaskaConsulting">ייעוץ אלסקה</label><select id="alaskaConsulting"><option value="none">ללא ייעוץ אלסקה</option><option value="yes">ייעוץ אלסקה בלבד — 350$</option></select><div class="hint">ייעוץ בלבד. תוכנית מלאה כבר כוללת את הייעוץ.</div></div>
+        <div class="field"><label for="alaskaPlan">תוכנית מלאה לאלסקה</label><select id="alaskaPlan"><option value="none">ללא תוכנית אלסקה</option><option value="oneWeek">תוכנית עד שבוע — 550$</option><option value="twoWeeks">תוכנית עד שבועיים — 700$</option><option value="fourWeeks">תוכנית עד 4 שבועות — 950$</option><option value="custom">מעל 4 שבועות / מחיר ידני</option></select><div class="hint">תוכנית מלאה כוללת כבר את הייעוץ. תוספת 25% מחושבת אוטומטית.</div></div>
+        <div class="field" id="customDestinationWrap" style="display:none;"><label for="customDestinationUsd">מחיר ידני בדולרים</label><input id="customDestinationUsd" type="number" step="1" min="0" value="0" /><div class="hint">למעל 4 שבועות בהוואי/אלסקה. אם מסומן ידני בשניהם, אותו סכום יתווסף לכל אחד מהם.</div></div>
+        <div class="field"><label for="mexicoService">מקסיקו</label><select id="mexicoService"><option value="none">ללא מקסיקו</option><option value="yes">כולל שירות מקסיקו — 60€</option></select><div class="hint">עלות ספק: 60€ + 25% רווח, המרה לשקלים ואז מע"מ.</div></div>
+        <div class="field"><label for="rvConsulting">ייעוץ קרוואנים</label><select id="rvConsulting"><option value="none">ללא ייעוץ קרוואנים</option><option value="yes">כולל ייעוץ קרוואנים — 150$</option></select><div class="hint">עלות ספק: 150$ + 25% רווח, המרה לשקלים ואז מע"מ.</div></div>
+        <div class="field"><label for="rushRate">תוספת דחיפות</label><select id="rushRate"><option value="0">ללא תוספת</option><option value="0.15">+15%</option><option value="0.30">+30%</option><option value="0.40">+40%</option></select><div class="hint">כל תוספת דחיפות מבטלת את כל ההנחות: 250 ₪ ומילואימניקים.</div></div>
+        <div class="field"><label>הנחת 24 שעות</label><div class="toggle-row"><input id="discountToggle" type="checkbox" checked /><span>להחיל הנחת 250 ₪ לפני מע"מ</span></div><div class="hint">במחירון היומי: מ־14 ימים ומעלה. במחירון הקודם: לפי החבילה. יעד חיצוני בלבד — ללא הנחה.</div></div>
+        <div class="field"><label>הנחת מילואימניקים</label><div class="toggle-row"><input id="reserveDiscountToggle" type="checkbox" /><span>להחיל 5% הנחה אחרי הנחת 250 ₪</span></div><div class="hint">הסדר הרגיל: קודם 250 ₪ אם רלוונטי, ואז 5% על היתרה. דחיפות מבטלת את ההנחה.</div></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">תוצאה להצעה ללקוח</h2>
+      <div class="results">
+        <div class="result-box"><div class="result-title">מחיר לפני מע"מ</div><div class="result-value" id="priceBeforeVat">₪0</div></div>
+        <div class="result-box primary"><div class="result-title">מחיר אחרי מע"מ</div><div class="result-value" id="priceWithVat">₪0</div></div>
+        <div class="result-box"><div class="result-title">מחיר אחרי מע"מ + הנחות/תוספות</div><div class="result-value" id="discountPriceWithVat">₪0</div></div>
+      </div>
+      <div class="breakdown" id="breakdown"></div>
+      <div class="note">הערה: המחירים מעוגלים לשקל הקרוב. רכיבי הוואי, אלסקה, מקסיקו וייעוץ קרוואנים מחושבים כך: מחיר ספק × 1.25 × שער מטבע. בכל תוספת דחיפות אין הנחות ומתווספת התוספת שנבחרה. מע"מ מחושב לפי 18%.</div>
+    </section>
+  </main>
+
+  <script>
+    const VAT = 0.18;
+    const DISCOUNT_NIS = 250;
+    const SUPPLIER_MARGIN = 1.25;
+    const CONSULTING_USD = 350;
+    const MEXICO_EUR = 60;
+    const RV_CONSULTING_USD = 150;
+    const RESERVE_DISCOUNT_RATE = 0.05;
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyesl0-rsC836VkfSMiJljz1DPecH8kUxtc6UFLVh3tYnKZkvWe4CixIe79SX8nGhcRPw/exec';
+
+    const legacyUsaPrices = {
+      none: { label: 'ללא תכנון ארה"ב', beforeVat: 0, allowBaseDiscount: false },
+      week: { label: 'שבוע', beforeVat: 950, allowBaseDiscount: false },
+      shortPackage: { label: '9-12 לילות', beforeVat: 1250, allowBaseDiscount: false },
+      twoWeeks: { label: 'עד שבועיים', beforeVat: 1945, allowBaseDiscount: true },
+      threeWeeks: { label: 'שלושה שבועות', beforeVat: 2475, allowBaseDiscount: true },
+      month: { label: 'חודש', beforeVat: 2995, allowBaseDiscount: true },
+      monthWeek: { label: 'חודש ושבוע', beforeVat: 3445, allowBaseDiscount: true },
+      monthHalf: { label: 'חודש וחצי', beforeVat: 3895, allowBaseDiscount: true },
+      twoMonths: { label: 'חודשיים', beforeVat: 4325, allowBaseDiscount: true },
+      basicMonth: { label: 'חבילת בייסיק עד חודש', beforeVat: 999, allowBaseDiscount: false },
+      basicTwoMonths: { label: 'חבילת בייסיק עד חודשיים', beforeVat: 1499, allowBaseDiscount: false },
+      basicThreeMonths: { label: 'חבילת בייסיק שלושה חודשים', beforeVat: 1999, allowBaseDiscount: false }
+    };
+
+    const destinationPlanPrices = {
+      none: { label: 'ללא תוכנית', usd: 0 },
+      oneWeek: { label: 'תוכנית עד שבוע', usd: 550 },
+      twoWeeks: { label: 'תוכנית עד שבועיים', usd: 700 },
+      fourWeeks: { label: 'תוכנית עד 4 שבועות', usd: 950 },
+      custom: { label: 'תוכנית מחיר ידני', usd: 0 }
+    };
+
+    const els = {
+      usaPricingType: document.getElementById('usaPricingType'), legacyUsaWrap: document.getElementById('legacyUsaWrap'), dailyUsaWrap: document.getElementById('dailyUsaWrap'), usaDuration: document.getElementById('usaDuration'), usaTripDays: document.getElementById('usaTripDays'),
+      usdRate: document.getElementById('usdRate'), eurRate: document.getElementById('eurRate'), refreshRate: document.getElementById('refreshRate'), rateStatus: document.getElementById('rateStatus'), usdConvertAmount: document.getElementById('usdConvertAmount'), usdToIlsResult: document.getElementById('usdToIlsResult'),
+      hawaiiConsulting: document.getElementById('hawaiiConsulting'), hawaiiPlan: document.getElementById('hawaiiPlan'), alaskaConsulting: document.getElementById('alaskaConsulting'), alaskaPlan: document.getElementById('alaskaPlan'), customDestinationWrap: document.getElementById('customDestinationWrap'), customDestinationUsd: document.getElementById('customDestinationUsd'),
+      mexicoService: document.getElementById('mexicoService'), rvConsulting: document.getElementById('rvConsulting'), rushRate: document.getElementById('rushRate'), discountToggle: document.getElementById('discountToggle'), reserveDiscountToggle: document.getElementById('reserveDiscountToggle'),
+      priceBeforeVat: document.getElementById('priceBeforeVat'), priceWithVat: document.getElementById('priceWithVat'), discountPriceWithVat: document.getElementById('discountPriceWithVat'), breakdown: document.getElementById('breakdown'),
+      dateStart: document.getElementById('dateStart'), dateEnd: document.getElementById('dateEnd'), calculateDaysBtn: document.getElementById('calculateDaysBtn'), clearDaysBtn: document.getElementById('clearDaysBtn'), daysResult: document.getElementById('daysResult')
+    };
+
+    function moneyNis(num) { return '₪' + Math.round(num).toLocaleString('he-IL'); }
+    function moneyUsd(num) { return '$' + Math.round(num).toLocaleString('en-US'); }
+    function moneyEur(num) { return '€' + Math.round(num).toLocaleString('en-US'); }
+
+    function getDailyUsaPricing(days) {
+      const cleanDays = Math.max(0, Math.floor(Number(days) || 0));
+      if (cleanDays === 0) return { label: 'ללא תכנון ארה"ב', beforeVat: 0, allowBaseDiscount: false, dailyRate: 0, days: 0 };
+      if (cleanDays <= 14) return { label: `מחירון יומי — ${cleanDays} ימים × 195 ₪`, beforeVat: cleanDays * 195, allowBaseDiscount: cleanDays === 14, dailyRate: 195, days: cleanDays };
+      if (cleanDays <= 21) return { label: `מחירון יומי — ${cleanDays} ימים × 179 ₪`, beforeVat: cleanDays * 179, allowBaseDiscount: true, dailyRate: 179, days: cleanDays };
+      return { label: `מחירון יומי — ${cleanDays} ימים × 149 ₪`, beforeVat: cleanDays * 149, allowBaseDiscount: true, dailyRate: 149, days: cleanDays };
+    }
+
+    function getUsaPrice(input) {
+      if (input.usaPricingType === 'daily') return getDailyUsaPricing(input.usaTripDays);
+      return legacyUsaPrices[input.usaDuration] || legacyUsaPrices.none;
+    }
+
+    function getDestinationPlanUsd(planType, customUsd) {
+      if (planType === 'custom') return Number(customUsd) || 0;
+      return destinationPlanPrices[planType]?.usd || 0;
+    }
+
+    function calculateModel(input) {
+      const usa = getUsaPrice(input);
+      const usdRate = Number(input.usdRate) || 0;
+      const eurRate = Number(input.eurRate) || 0;
+      const rushRate = Number(input.rushRate) || 0;
+      const isRush = rushRate > 0;
+
+      const hawaiiConsultingUsd = input.hawaiiConsulting ? CONSULTING_USD : 0;
+      const hawaiiPlanUsd = getDestinationPlanUsd(input.hawaiiPlan, input.customDestinationUsd);
+      const alaskaConsultingUsd = input.alaskaConsulting ? CONSULTING_USD : 0;
+      const alaskaPlanUsd = getDestinationPlanUsd(input.alaskaPlan, input.customDestinationUsd);
+      const destinationsUsd = hawaiiConsultingUsd + hawaiiPlanUsd + alaskaConsultingUsd + alaskaPlanUsd;
+      const destinationsAfterMarginUsd = destinationsUsd * SUPPLIER_MARGIN;
+      const destinationsNisBeforeVat = destinationsAfterMarginUsd * usdRate;
+
+      const mexicoBaseEur = input.hasMexico ? MEXICO_EUR : 0;
+      const mexicoAfterMarginEur = mexicoBaseEur * SUPPLIER_MARGIN;
+      const mexicoNisBeforeVat = mexicoAfterMarginEur * eurRate;
+      const rvBaseUsd = input.hasRvConsulting ? RV_CONSULTING_USD : 0;
+      const rvAfterMarginUsd = rvBaseUsd * SUPPLIER_MARGIN;
+      const rvNisBeforeVat = rvAfterMarginUsd * usdRate;
+
+      const hasAdditionalSupplierService = destinationsUsd > 0 || mexicoBaseEur > 0 || rvBaseUsd > 0;
+      const isUsaWeekPlusAdditionalService = usa.beforeVat > 0 && !usa.allowBaseDiscount && hasAdditionalSupplierService;
+      const subtotalBeforeDiscounts = usa.beforeVat + destinationsNisBeforeVat + mexicoNisBeforeVat + rvNisBeforeVat;
+      const canEarlyDiscount = !isRush && Boolean(input.applyEarlyDiscount) && usa.beforeVat > 0 && (usa.allowBaseDiscount || isUsaWeekPlusAdditionalService);
+      const earlyDiscountAmount = canEarlyDiscount ? Math.min(DISCOUNT_NIS, subtotalBeforeDiscounts) : 0;
+      const afterEarlyDiscount = subtotalBeforeDiscounts - earlyDiscountAmount;
+      const reserveDiscountAmount = (!isRush && input.applyReserveDiscount) ? afterEarlyDiscount * RESERVE_DISCOUNT_RATE : 0;
+      const baseAfterDiscounts = Math.max(afterEarlyDiscount - reserveDiscountAmount, 0);
+      const rushAmount = isRush ? subtotalBeforeDiscounts * rushRate : 0;
+      const totalBeforeVat = (isRush ? subtotalBeforeDiscounts : baseAfterDiscounts) + rushAmount;
+      const totalWithVat = totalBeforeVat * (1 + VAT);
+
+      return { usa, usdRate, eurRate, rushRate, isRush, hawaiiConsultingUsd, hawaiiPlanUsd, alaskaConsultingUsd, alaskaPlanUsd, destinationsUsd, destinationsAfterMarginUsd, destinationsNisBeforeVat, mexicoBaseEur, mexicoAfterMarginEur, mexicoNisBeforeVat, rvBaseUsd, rvAfterMarginUsd, rvNisBeforeVat, hasAdditionalSupplierService, isUsaWeekPlusAdditionalService, canEarlyDiscount, subtotalBeforeDiscounts, earlyDiscountAmount, afterEarlyDiscount, reserveDiscountAmount, rushAmount, totalBeforeVat, totalWithVat };
+    }
+
+    function calculate() {
+      const isDaily = els.usaPricingType.value === 'daily';
+      els.legacyUsaWrap.style.display = isDaily ? 'none' : 'flex';
+      els.dailyUsaWrap.style.display = isDaily ? 'flex' : 'none';
+      els.customDestinationWrap.style.display = (els.hawaiiPlan.value === 'custom' || els.alaskaPlan.value === 'custom') ? 'flex' : 'none';
+
+      const result = calculateModel({ usaPricingType: els.usaPricingType.value, usaDuration: els.usaDuration.value, usaTripDays: els.usaTripDays.value, usdRate: els.usdRate.value, eurRate: els.eurRate.value, hawaiiConsulting: els.hawaiiConsulting.value === 'yes', hawaiiPlan: els.hawaiiPlan.value, alaskaConsulting: els.alaskaConsulting.value === 'yes', alaskaPlan: els.alaskaPlan.value, customDestinationUsd: els.customDestinationUsd.value, hasMexico: els.mexicoService.value === 'yes', hasRvConsulting: els.rvConsulting.value === 'yes', rushRate: els.rushRate.value, applyEarlyDiscount: els.discountToggle.checked, applyReserveDiscount: els.reserveDiscountToggle.checked });
+
+      els.priceBeforeVat.textContent = moneyNis(result.subtotalBeforeDiscounts);
+      els.priceWithVat.textContent = moneyNis(result.subtotalBeforeDiscounts * (1 + VAT));
+      els.discountPriceWithVat.textContent = moneyNis(result.totalWithVat);
+
+      let usaLine = result.usa.beforeVat > 0 ? `תכנון מקצועי בארה"ב — ${result.usa.label}: <strong>${moneyNis(result.usa.beforeVat)}</strong> לפני מע"מ` : 'ללא רכיב תכנון ארה"ב';
+      if (result.isRush) usaLine += ' <span class="pill warning">דחיפות: ללא הנחות</span>';
+
+      let discountLine = '';
+      if (result.isRush) discountLine = 'דחיפות מבטלת את כל ההנחות (24 שעות ומילואימניקים).';
+      else if (result.canEarlyDiscount || result.reserveDiscountAmount > 0) discountLine = [result.canEarlyDiscount ? `הנחת 24 שעות: <strong>-${moneyNis(result.earlyDiscountAmount)}</strong>` : '', result.reserveDiscountAmount > 0 ? `הנחת מילואימניקים 5% על היתרה: <strong>-${moneyNis(result.reserveDiscountAmount)}</strong>` : ''].filter(Boolean).join('<br>');
+      else if (result.usa.beforeVat === 0) discountLine = 'אין הנחת 24 שעות כאשר אין רכיב תכנון ארה"ב.';
+      else discountLine = 'אין הנחת 24 שעות בתצורה הנוכחית.';
+
+      els.breakdown.innerHTML = `
+        <strong>פירוט חישוב:</strong><br>
+        ${usaLine}<br>
+        ייעוץ הוואי: <strong>${moneyUsd(result.hawaiiConsultingUsd)}</strong><br>
+        תוכנית הוואי: <strong>${moneyUsd(result.hawaiiPlanUsd)}</strong><br>
+        ייעוץ אלסקה: <strong>${moneyUsd(result.alaskaConsultingUsd)}</strong><br>
+        תוכנית אלסקה: <strong>${moneyUsd(result.alaskaPlanUsd)}</strong><br>
+        סך הוואי + אלסקה לפני רווח: <strong>${moneyUsd(result.destinationsUsd)}</strong><br>
+        סך הוואי + אלסקה אחרי 25% רווח: <strong>${moneyUsd(result.destinationsAfterMarginUsd)}</strong><br>
+        רכיב הוואי + אלסקה בשקלים לפי שער דולר ${result.usdRate}: <strong>${moneyNis(result.destinationsNisBeforeVat)}</strong> לפני מע"מ<br>
+        רכיב מקסיקו: <strong>${moneyEur(result.mexicoBaseEur)}</strong> × 1.25 = <strong>${moneyEur(result.mexicoAfterMarginEur)}</strong>, לפי שער יורו ${result.eurRate}: <strong>${moneyNis(result.mexicoNisBeforeVat)}</strong> לפני מע"מ<br>
+        רכיב ייעוץ קרוואנים: <strong>${moneyUsd(result.rvBaseUsd)}</strong> × 1.25 = <strong>${moneyUsd(result.rvAfterMarginUsd)}</strong>, לפי שער דולר ${result.usdRate}: <strong>${moneyNis(result.rvNisBeforeVat)}</strong> לפני מע"מ<br>
+        סה"כ לפני הנחות/תוספות: <strong>${moneyNis(result.subtotalBeforeDiscounts)}</strong><br>
+        ${discountLine}<br>
+        ${result.rushAmount > 0 ? `תוספת דחיפות ${Math.round(result.rushRate * 100)}%: <strong>+${moneyNis(result.rushAmount)}</strong><br>` : ''}
+        סה"כ לפני מע"מ אחרי הנחות/תוספות: <strong>${moneyNis(result.totalBeforeVat)}</strong><br>
+        סה"כ כולל מע"מ אחרי הנחות/תוספות: <strong>${moneyNis(result.totalWithVat)}</strong>
+      `;
+      updateUsdConverter();
+    }
+
+    async function fetchRepresentativeUsdRate() {
+      try {
+        els.rateStatus.textContent = 'מעדכן שערי דולר ויורו מבנק ישראל...';
+        const response = await fetch(APPS_SCRIPT_URL, { cache: 'no-store' });
+        if (!response.ok) throw new Error('Apps Script response was not ok');
+        const data = await response.json();
+        const usd = data.usd || data.rate;
+        const eur = data.eur;
+        const lastUpdate = data.lastUpdate;
+        if (!usd) throw new Error('USD rate missing');
+        els.usdRate.value = Number(usd).toFixed(3);
+        if (eur) els.eurRate.value = Number(eur).toFixed(3);
+        const updatedAt = lastUpdate ? new Date(lastUpdate).toLocaleString('he-IL') : '';
+        els.rateStatus.textContent = updatedAt ? `שערים יציגים עודכנו מבנק ישראל: דולר ${Number(usd).toFixed(3)} ₪${eur ? `, יורו ${Number(eur).toFixed(3)} ₪` : ''}. עדכון אחרון: ${updatedAt}` : `שערים יציגים עודכנו מבנק ישראל: דולר ${Number(usd).toFixed(3)} ₪${eur ? `, יורו ${Number(eur).toFixed(3)} ₪` : ''}.`;
+        calculate();
+      } catch (error) { els.rateStatus.textContent = 'לא הצלחתי לעדכן אוטומטית. אפשר להזין שערים ידנית.'; }
+    }
+
+    function calculateDaysBetweenDates() {
+      const start = els.dateStart.value, end = els.dateEnd.value;
+      if (!start || !end) { els.daysResult.textContent = '—'; return; }
+      const diffDays = Math.round((new Date(end + 'T00:00:00') - new Date(start + 'T00:00:00')) / (1000 * 60 * 60 * 24));
+      els.daysResult.textContent = diffDays < 0 ? 'תאריך סיום חייב להיות אחרי תאריך התחלה' : `${diffDays} ימים`;
+    }
+
+    function clearDaysCalculator() { els.dateStart.value = ''; els.dateEnd.value = ''; els.daysResult.textContent = '—'; }
+    function updateUsdConverter() { els.usdToIlsResult.value = moneyNis((Number(els.usdConvertAmount.value) || 0) * (Number(els.usdRate.value) || 0)); }
+
+    function runCalculatorTests() {
+      console.assert(getDailyUsaPricing(13).beforeVat === 2535, 'בדיקה: 13 ימים צריכים להיות 13*195');
+      console.assert(getDailyUsaPricing(14).beforeVat === 2730 && getDailyUsaPricing(14).allowBaseDiscount === true, 'בדיקה: 14 ימים צריכים להיות 14*195 וזכאים להנחת 250');
+      console.assert(getDailyUsaPricing(15).beforeVat === 2685, 'בדיקה: 15 ימים צריכים להיות 15*179');
+      console.assert(getDailyUsaPricing(22).beforeVat === 3278, 'בדיקה: 22 ימים צריכים להיות 22*149');
+      console.assert(legacyUsaPrices.monthWeek.beforeVat === 3445, 'בדיקה: חודש ושבוע צריך להיות 3445 לפני מע"מ');
+      const testRush = calculateModel({ usaPricingType:'daily', usaTripDays:15, usaDuration:'none', usdRate:4, eurRate:4, hawaiiConsulting:false, hawaiiPlan:'none', alaskaConsulting:false, alaskaPlan:'none', customDestinationUsd:0, hasMexico:false, hasRvConsulting:false, rushRate:0.3, applyEarlyDiscount:true, applyReserveDiscount:true });
+      console.assert(testRush.earlyDiscountAmount === 0 && testRush.reserveDiscountAmount === 0, 'בדיקה: דחיפות מבטלת הנחות');
+    }
+
+    Object.values(els).forEach(el => { if (el && ['SELECT','INPUT'].includes(el.tagName)) { el.addEventListener('input', calculate); el.addEventListener('change', calculate); } });
+    els.refreshRate.addEventListener('click', fetchRepresentativeUsdRate);
+    els.calculateDaysBtn.addEventListener('click', calculateDaysBetweenDates);
+    els.clearDaysBtn.addEventListener('click', clearDaysCalculator);
+    els.dateStart.addEventListener('change', calculateDaysBetweenDates);
+    els.dateEnd.addEventListener('change', calculateDaysBetweenDates);
+    els.usdConvertAmount.addEventListener('input', updateUsdConverter);
+    els.usdRate.addEventListener('input', updateUsdConverter);
+
+    runCalculatorTests();
+    calculate();
+  </script>
+</body>
+</html>
