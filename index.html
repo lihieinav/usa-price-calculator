@@ -122,6 +122,7 @@
         <div class="field"><label for="rushRate">תוספת דחיפות</label><select id="rushRate"><option value="0">ללא תוספת</option><option value="0.15">+15%</option><option value="0.30">+30%</option><option value="0.40">+40%</option></select><div class="hint">כל תוספת דחיפות מבטלת את כל ההנחות: 250 ₪ ומילואימניקים.</div></div>
         <div class="field"><label>הנחת 24 שעות</label><div class="toggle-row"><input id="discountToggle" type="checkbox" checked /><span>להחיל הנחת 250 ₪ לפני מע"מ</span></div><div class="hint">במחירון היומי: מ־14 ימים ומעלה. במחירון הקודם: לפי החבילה. יעד חיצוני בלבד — ללא הנחה.</div></div>
         <div class="field"><label>הנחת מילואימניקים</label><div class="toggle-row"><input id="reserveDiscountToggle" type="checkbox" /><span>להחיל 5% הנחה אחרי הנחת 250 ₪</span></div><div class="hint">הסדר הרגיל: קודם 250 ₪ אם רלוונטי, ואז 5% על היתרה. דחיפות מבטלת את ההנחה.</div></div>
+        <div class="field"><label>הטבת כרמית</label><div class="toggle-row"><input id="carmitDiscountToggle" type="checkbox" /><span>להחיל 5% הנחה על מחיר הבסיס לפני מע"מ</span></div><div class="hint">הטבת כרמית מחושבת על המחיר הבסיסי לפני מע"מ ונשמרת גם כאשר יש תוספת דחיפות.</div></div>
       </div>
     </section>
 
@@ -174,7 +175,7 @@
       usaPricingType: document.getElementById('usaPricingType'), legacyUsaWrap: document.getElementById('legacyUsaWrap'), dailyUsaWrap: document.getElementById('dailyUsaWrap'), usaDuration: document.getElementById('usaDuration'), usaTripDays: document.getElementById('usaTripDays'),
       usdRate: document.getElementById('usdRate'), eurRate: document.getElementById('eurRate'), refreshRate: document.getElementById('refreshRate'), rateStatus: document.getElementById('rateStatus'), usdConvertAmount: document.getElementById('usdConvertAmount'), usdToIlsResult: document.getElementById('usdToIlsResult'),
       hawaiiConsulting: document.getElementById('hawaiiConsulting'), hawaiiPlan: document.getElementById('hawaiiPlan'), alaskaConsulting: document.getElementById('alaskaConsulting'), alaskaPlan: document.getElementById('alaskaPlan'), customDestinationWrap: document.getElementById('customDestinationWrap'), customDestinationUsd: document.getElementById('customDestinationUsd'),
-      mexicoService: document.getElementById('mexicoService'), rvConsulting: document.getElementById('rvConsulting'), rushRate: document.getElementById('rushRate'), discountToggle: document.getElementById('discountToggle'), reserveDiscountToggle: document.getElementById('reserveDiscountToggle'),
+      mexicoService: document.getElementById('mexicoService'), rvConsulting: document.getElementById('rvConsulting'), rushRate: document.getElementById('rushRate'), discountToggle: document.getElementById('discountToggle'), reserveDiscountToggle: document.getElementById('reserveDiscountToggle'), carmitDiscountToggle: document.getElementById('carmitDiscountToggle'),
       priceBeforeVat: document.getElementById('priceBeforeVat'), priceWithVat: document.getElementById('priceWithVat'), discountPriceWithVat: document.getElementById('discountPriceWithVat'), breakdown: document.getElementById('breakdown'),
       dateStart: document.getElementById('dateStart'), dateEnd: document.getElementById('dateEnd'), calculateDaysBtn: document.getElementById('calculateDaysBtn'), clearDaysBtn: document.getElementById('clearDaysBtn'), daysResult: document.getElementById('daysResult')
     };
@@ -230,12 +231,15 @@
       const earlyDiscountAmount = canEarlyDiscount ? Math.min(DISCOUNT_NIS, subtotalBeforeDiscounts) : 0;
       const afterEarlyDiscount = subtotalBeforeDiscounts - earlyDiscountAmount;
       const reserveDiscountAmount = (!isRush && input.applyReserveDiscount) ? afterEarlyDiscount * RESERVE_DISCOUNT_RATE : 0;
-      const baseAfterDiscounts = Math.max(afterEarlyDiscount - reserveDiscountAmount, 0);
+      const carmitDiscountAmount = input.applyCarmitDiscount ? subtotalBeforeDiscounts * 0.05 : 0;
+      const baseAfterDiscounts = Math.max(afterEarlyDiscount - reserveDiscountAmount - carmitDiscountAmount, 0);
       const rushAmount = isRush ? subtotalBeforeDiscounts * rushRate : 0;
-      const totalBeforeVat = (isRush ? subtotalBeforeDiscounts : baseAfterDiscounts) + rushAmount;
+      const totalBeforeVat = isRush
+        ? Math.max(subtotalBeforeDiscounts - carmitDiscountAmount, 0) + rushAmount
+        : baseAfterDiscounts;
       const totalWithVat = totalBeforeVat * (1 + VAT);
 
-      return { usa, usdRate, eurRate, rushRate, isRush, hawaiiConsultingUsd, hawaiiPlanUsd, alaskaConsultingUsd, alaskaPlanUsd, destinationsUsd, destinationsAfterMarginUsd, destinationsNisBeforeVat, mexicoBaseEur, mexicoAfterMarginEur, mexicoNisBeforeVat, rvBaseUsd, rvAfterMarginUsd, rvNisBeforeVat, hasAdditionalSupplierService, isUsaWeekPlusAdditionalService, canEarlyDiscount, subtotalBeforeDiscounts, earlyDiscountAmount, afterEarlyDiscount, reserveDiscountAmount, rushAmount, totalBeforeVat, totalWithVat };
+      return { usa, usdRate, eurRate, rushRate, isRush, hawaiiConsultingUsd, hawaiiPlanUsd, alaskaConsultingUsd, alaskaPlanUsd, destinationsUsd, destinationsAfterMarginUsd, destinationsNisBeforeVat, mexicoBaseEur, mexicoAfterMarginEur, mexicoNisBeforeVat, rvBaseUsd, rvAfterMarginUsd, rvNisBeforeVat, hasAdditionalSupplierService, isUsaWeekPlusAdditionalService, canEarlyDiscount, subtotalBeforeDiscounts, earlyDiscountAmount, afterEarlyDiscount, reserveDiscountAmount, carmitDiscountAmount, rushAmount, totalBeforeVat, totalWithVat };
     }
 
     function calculate() {
@@ -244,7 +248,7 @@
       els.dailyUsaWrap.style.display = isDaily ? 'flex' : 'none';
       els.customDestinationWrap.style.display = (els.hawaiiPlan.value === 'custom' || els.alaskaPlan.value === 'custom') ? 'flex' : 'none';
 
-      const result = calculateModel({ usaPricingType: els.usaPricingType.value, usaDuration: els.usaDuration.value, usaTripDays: els.usaTripDays.value, usdRate: els.usdRate.value, eurRate: els.eurRate.value, hawaiiConsulting: els.hawaiiConsulting.value === 'yes', hawaiiPlan: els.hawaiiPlan.value, alaskaConsulting: els.alaskaConsulting.value === 'yes', alaskaPlan: els.alaskaPlan.value, customDestinationUsd: els.customDestinationUsd.value, hasMexico: els.mexicoService.value === 'yes', hasRvConsulting: els.rvConsulting.value === 'yes', rushRate: els.rushRate.value, applyEarlyDiscount: els.discountToggle.checked, applyReserveDiscount: els.reserveDiscountToggle.checked });
+      const result = calculateModel({ usaPricingType: els.usaPricingType.value, usaDuration: els.usaDuration.value, usaTripDays: els.usaTripDays.value, usdRate: els.usdRate.value, eurRate: els.eurRate.value, hawaiiConsulting: els.hawaiiConsulting.value === 'yes', hawaiiPlan: els.hawaiiPlan.value, alaskaConsulting: els.alaskaConsulting.value === 'yes', alaskaPlan: els.alaskaPlan.value, customDestinationUsd: els.customDestinationUsd.value, hasMexico: els.mexicoService.value === 'yes', hasRvConsulting: els.rvConsulting.value === 'yes', rushRate: els.rushRate.value, applyEarlyDiscount: els.discountToggle.checked, applyReserveDiscount: els.reserveDiscountToggle.checked, applyCarmitDiscount: els.carmitDiscountToggle.checked });
 
       els.priceBeforeVat.textContent = moneyNis(result.subtotalBeforeDiscounts);
       els.priceWithVat.textContent = moneyNis(result.subtotalBeforeDiscounts * (1 + VAT));
@@ -254,8 +258,10 @@
       if (result.isRush) usaLine += ' <span class="pill warning">דחיפות: ללא הנחות</span>';
 
       let discountLine = '';
-      if (result.isRush) discountLine = 'דחיפות מבטלת את כל ההנחות (24 שעות ומילואימניקים).';
-      else if (result.canEarlyDiscount || result.reserveDiscountAmount > 0) discountLine = [result.canEarlyDiscount ? `הנחת 24 שעות: <strong>-${moneyNis(result.earlyDiscountAmount)}</strong>` : '', result.reserveDiscountAmount > 0 ? `הנחת מילואימניקים 5% על היתרה: <strong>-${moneyNis(result.reserveDiscountAmount)}</strong>` : ''].filter(Boolean).join('<br>');
+      if (result.isRush) discountLine = result.carmitDiscountAmount > 0
+        ? `דחיפות מבטלת את הנחת 24 השעות והנחת המילואימניקים, אך הטבת כרמית נשמרת: <strong>-${moneyNis(result.carmitDiscountAmount)}</strong>`
+        : 'דחיפות מבטלת את הנחת 24 השעות והנחת המילואימניקים.';
+      else if (result.canEarlyDiscount || result.reserveDiscountAmount > 0 || result.carmitDiscountAmount > 0) discountLine = [result.canEarlyDiscount ? `הנחת 24 שעות: <strong>-${moneyNis(result.earlyDiscountAmount)}</strong>` : '', result.reserveDiscountAmount > 0 ? `הנחת מילואימניקים 5% על היתרה: <strong>-${moneyNis(result.reserveDiscountAmount)}</strong>` : '', result.carmitDiscountAmount > 0 ? `הטבת כרמית 5% על מחיר הבסיס: <strong>-${moneyNis(result.carmitDiscountAmount)}</strong>` : ''].filter(Boolean).join('<br>');
       else if (result.usa.beforeVat === 0) discountLine = 'אין הנחת 24 שעות כאשר אין רכיב תכנון ארה"ב.';
       else discountLine = 'אין הנחת 24 שעות בתצורה הנוכחית.';
 
@@ -314,8 +320,17 @@
       console.assert(getDailyUsaPricing(15).beforeVat === 2685, 'בדיקה: 15 ימים צריכים להיות 15*179');
       console.assert(getDailyUsaPricing(22).beforeVat === 3278, 'בדיקה: 22 ימים צריכים להיות 22*149');
       console.assert(legacyUsaPrices.monthWeek.beforeVat === 3445, 'בדיקה: חודש ושבוע צריך להיות 3445 לפני מע"מ');
-      const testRush = calculateModel({ usaPricingType:'daily', usaTripDays:15, usaDuration:'none', usdRate:4, eurRate:4, hawaiiConsulting:false, hawaiiPlan:'none', alaskaConsulting:false, alaskaPlan:'none', customDestinationUsd:0, hasMexico:false, hasRvConsulting:false, rushRate:0.3, applyEarlyDiscount:true, applyReserveDiscount:true });
+      const testRush = calculateModel({ usaPricingType:'daily', usaTripDays:15, usaDuration:'none', usdRate:4, eurRate:4, hawaiiConsulting:false, hawaiiPlan:'none', alaskaConsulting:false, alaskaPlan:'none', customDestinationUsd:0, hasMexico:false, hasRvConsulting:false, rushRate:0.3, applyEarlyDiscount:true, applyReserveDiscount:true, applyCarmitDiscount:false });
       console.assert(testRush.earlyDiscountAmount === 0 && testRush.reserveDiscountAmount === 0, 'בדיקה: דחיפות מבטלת הנחות');
+
+      const testCarmit = calculateModel({ usaPricingType:'legacy', usaTripDays:0, usaDuration:'twoWeeks', usdRate:4, eurRate:4, hawaiiConsulting:false, hawaiiPlan:'none', alaskaConsulting:false, alaskaPlan:'none', customDestinationUsd:0, hasMexico:false, hasRvConsulting:false, rushRate:0, applyEarlyDiscount:false, applyReserveDiscount:false, applyCarmitDiscount:true });
+      console.assert(Math.abs(testCarmit.carmitDiscountAmount - (1945 * 0.05)) < 0.001, 'בדיקה: הטבת כרמית צריכה להיות 5% ממחיר הבסיס לפני מע"מ');
+
+      const testCarmitRush = calculateModel({ usaPricingType:'legacy', usaTripDays:0, usaDuration:'twoWeeks', usdRate:4, eurRate:4, hawaiiConsulting:false, hawaiiPlan:'none', alaskaConsulting:false, alaskaPlan:'none', customDestinationUsd:0, hasMexico:false, hasRvConsulting:false, rushRate:0.15, applyEarlyDiscount:true, applyReserveDiscount:true, applyCarmitDiscount:true });
+      console.assert(testCarmitRush.earlyDiscountAmount === 0, 'בדיקה: בדחיפות אין הנחת 24 שעות גם עם כרמית');
+      console.assert(testCarmitRush.reserveDiscountAmount === 0, 'בדיקה: בדחיפות אין הנחת מילואימניקים גם עם כרמית');
+      console.assert(Math.abs(testCarmitRush.carmitDiscountAmount - (1945 * 0.05)) < 0.001, 'בדיקה: הטבת כרמית נשמרת גם בדחיפות');
+      console.assert(Math.abs(testCarmitRush.totalBeforeVat - ((1945 - (1945 * 0.05)) + (1945 * 0.15))) < 0.001, 'בדיקה: הטבת כרמית מופחתת בפועל מהמחיר גם כשיש תוספת דחיפות');
     }
 
     Object.values(els).forEach(el => { if (el && ['SELECT','INPUT'].includes(el.tagName)) { el.addEventListener('input', calculate); el.addEventListener('change', calculate); } });
