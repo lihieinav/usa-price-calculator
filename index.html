@@ -113,7 +113,7 @@
       <div class="section-divider">שירותי תכנון נוספים</div>
       <div class="grid">
         <div class="field"><label for="hawaiiConsulting">ייעוץ הוואי</label><select id="hawaiiConsulting"><option value="none">ללא ייעוץ הוואי</option><option value="yes">ייעוץ הוואי בלבד — 350$</option></select><div class="hint">ייעוץ בלבד. תוכנית מלאה כבר כוללת את הייעוץ.</div></div>
-        <div class="field"><label for="hawaiiPlan">תוכנית מלאה להוואי</label><select id="hawaiiPlan"><option value="none">ללא תוכנית הוואי</option><option value="oneWeek">תוכנית עד שבוע — 550$</option><option value="twoWeeks">תוכנית עד שבועיים — 700$</option><option value="fourWeeks">תוכנית עד 4 שבועות — 950$</option><option value="custom">מעל 4 שבועות / מחיר ידני</option></select><div class="hint">תוכנית מלאה כוללת כבר את הייעוץ. תוספת 25% מחושבת אוטומטית.</div></div>
+        <div class="field"><label for="hawaiiPlan">תכנון הוואי</label><select id="hawaiiPlan"><option value="none">ללא תוכנית הוואי</option><optgroup label="מחירון חדש"><option value="newOneWeek">עד שבוע — 400$</option><option value="newTwoWeeks">עד שבועיים — 550$</option><option value="newOverTwoWeeks">מעל שבועיים — 700$</option></optgroup><optgroup label="מחירון ישן"><option value="oneWeek">עד שבוע — 550$</option><option value="twoWeeks">עד שבועיים — 700$</option><option value="fourWeeks">עד 4 שבועות — 950$</option><option value="custom">מעל 4 שבועות / מחיר ידני</option></optgroup></select><div class="hint">התכנון בהוואי נפרד מייעוץ הוואי. תוספת 25% מחושבת אוטומטית על המחיר שנבחר.</div></div>
         <div class="field"><label for="alaskaConsulting">ייעוץ אלסקה</label><select id="alaskaConsulting"><option value="none">ללא ייעוץ אלסקה</option><option value="yes">ייעוץ אלסקה בלבד — 350$</option></select><div class="hint">ייעוץ בלבד. תוכנית מלאה כבר כוללת את הייעוץ.</div></div>
         <div class="field"><label for="alaskaPlan">תוכנית מלאה לאלסקה</label><select id="alaskaPlan"><option value="none">ללא תוכנית אלסקה</option><option value="oneWeek">תוכנית עד שבוע — 550$</option><option value="twoWeeks">תוכנית עד שבועיים — 700$</option><option value="fourWeeks">תוכנית עד 4 שבועות — 950$</option><option value="custom">מעל 4 שבועות / מחיר ידני</option></select><div class="hint">תוכנית מלאה כוללת כבר את הייעוץ. תוספת 25% מחושבת אוטומטית.</div></div>
         <div class="field" id="customDestinationWrap" style="display:none;"><label for="customDestinationUsd">מחיר ידני בדולרים</label><input id="customDestinationUsd" type="number" step="1" min="0" value="0" /><div class="hint">למעל 4 שבועות בהוואי/אלסקה. אם מסומן ידני בשניהם, אותו סכום יתווסף לכל אחד מהם.</div></div>
@@ -165,6 +165,9 @@
 
     const destinationPlanPrices = {
       none: { label: 'ללא תוכנית', usd: 0 },
+      newOneWeek: { label: 'תכנון הוואי חדש — עד שבוע', usd: 400 },
+      newTwoWeeks: { label: 'תכנון הוואי חדש — עד שבועיים', usd: 550 },
+      newOverTwoWeeks: { label: 'תכנון הוואי חדש — מעל שבועיים', usd: 700 },
       oneWeek: { label: 'תוכנית עד שבוע', usd: 550 },
       twoWeeks: { label: 'תוכנית עד שבועיים', usd: 700 },
       fourWeeks: { label: 'תוכנית עד 4 שבועות', usd: 950 },
@@ -331,6 +334,12 @@
       console.assert(testCarmitRush.reserveDiscountAmount === 0, 'בדיקה: בדחיפות אין הנחת מילואימניקים גם עם כרמית');
       console.assert(Math.abs(testCarmitRush.carmitDiscountAmount - (1945 * 0.05)) < 0.001, 'בדיקה: הטבת כרמית נשמרת גם בדחיפות');
       console.assert(Math.abs(testCarmitRush.totalBeforeVat - ((1945 - (1945 * 0.05)) + (1945 * 0.15))) < 0.001, 'בדיקה: הטבת כרמית מופחתת בפועל מהמחיר גם כשיש תוספת דחיפות');
+      console.assert(getDestinationPlanUsd('newOneWeek', 0) === 400, 'בדיקה: מחירון הוואי חדש עד שבוע = 400$');
+      console.assert(getDestinationPlanUsd('newTwoWeeks', 0) === 550, 'בדיקה: מחירון הוואי חדש עד שבועיים = 550$');
+      console.assert(getDestinationPlanUsd('newOverTwoWeeks', 0) === 700, 'בדיקה: מחירון הוואי חדש מעל שבועיים = 700$');
+      console.assert(getDestinationPlanUsd('oneWeek', 0) === 550, 'בדיקה: המחיר הישן עד שבוע נשאר 550$');
+      console.assert(getDestinationPlanUsd('twoWeeks', 0) === 700, 'בדיקה: המחיר הישן עד שבועיים נשאר 700$');
+      console.assert(getDestinationPlanUsd('fourWeeks', 0) === 950, 'בדיקה: המחיר הישן עד 4 שבועות נשאר 950$');
     }
 
     Object.values(els).forEach(el => { if (el && ['SELECT','INPUT'].includes(el.tagName)) { el.addEventListener('input', calculate); el.addEventListener('change', calculate); } });
